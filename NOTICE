@@ -1,0 +1,47 @@
+AI Taste Scanner — Third-Party Notices / 第三方声明
+
+This software incorporates portions derived from the following third-party
+open-source work:
+
+    khazix-writer skill
+    Author:  数字生命卡兹克 (Khazix)
+    Repo:    https://github.com/KKKKhazix/khazix-skills
+    License: MIT License
+
+Derivation statement (本工具对下列内容的来源声明):
+
+The four-layer self-check architecture (L1 硬性规则 / L2 风格一致性 /
+L3 内容质量 / L4 活人感) and the 高频踩雷词 (high-frequency AI-trap word)
+list implemented in ai_taste_scanner.py are derived from the khazix-writer
+skill listed above. The scanning/analysis code itself is original, but the
+four-layer framework and the trap-word list are ports of khazix-writer.
+本工具的 L1-L4 四层自检体系与高频踩雷词表派生自上述 khazix-writer skill；
+扫描/分析代码本身为原创，但四层框架与踩雷词表为 khazix-writer 的移植。
+
+The MIT License text of the above source, which must be preserved in
+substantial portions, is reproduced below:
+(上述来源的 MIT 许可文本，须在实质性部分保留，全文如下)
+
+--------------------------------------------------------------------------
+
+MIT License
+
+Copyright (c) 2026 数字生命卡兹克
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

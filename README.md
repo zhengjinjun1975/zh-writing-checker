@@ -79,6 +79,16 @@ python ai_taste_scanner.py 你的文档.md
 
 纯 Python 标准库（`re`/`json`/`sys`/`pathlib`），零第三方依赖。
 
+## 来源声明 (Acknowledgements)
+
+本工具的 **L1-L4 四层自检体系** 与 **高频踩雷词表** 派生自以下开源作品：
+
+- **卡兹克 khazix-writer skill**（数字生命卡兹克 / Khazix）
+- 仓库：https://github.com/KKKKhazix/khazix-skills
+- 许可：MIT License（Copyright (c) 2026 数字生命卡兹克）
+
+扫描/分析代码本身为原创，但四层框架与踩雷词表为 khazix-writer 的移植。完整声明见 [NOTICE](NOTICE)，MIT 许可全文见 [LICENSE.khazix](LICENSE.khazix)。
+
 ## License
 
-[Apache License 2.0](LICENSE)
+[Apache License 2.0](LICENSE)（原创部分）· [MIT License](LICENSE.khazix)（khazix 派生部分，详见 NOTICE）
