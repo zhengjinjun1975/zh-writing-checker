@@ -1,94 +1,76 @@
-# AI Taste Scanner — AI 味指纹扫描器
+# zh-writing-checker — 中文写作质量检查器
 
-> 扫描文本中典型的"AI 味"信号，输出**四层结构化**检查报告（JSON）。用于编辑/写作者/审稿人把关 AI 生成内容，也能当 CI 检查器。
+> 轻量纯 Python 零依赖的中文写作质量把关工具。**严谨性（错字/标点/语病/数字）+ 文风（去AI味）+ 活人感** 六维检测，输出结构化 JSON 报告。用于编辑/写作者/审稿人，也能当 CI 检查器。
 
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-## 检测框架（四层）
+## 核心原则
 
-### L1 硬性规则（fail，必改）
-| 检测 | 内容 |
-|------|------|
-| 破折号 | `——` / `—` 滥用（AI 头号标志，绝对禁用） |
-| 禁用词 | 底层逻辑 / 前所未有 / 赋能 / 闭环 / 长期主义 / 关键抓手 / 价值沉淀 / 认知升级 / 说白了 / 本质上 / 综上所述 / 值得注意的是 / 不难发现 / 不仅仅是... 等 ~31 个黑话+踩雷词 |
-| 元语言 | 写在最后 / 结语 / 让我们讨论 / 总而言之 / 在深入探讨之前... |
-| 教科书开头 | 在当今时代 / 随着...发展 / 众所周知 / 毋庸置疑... |
-| 搜索结果痕迹 | "搜索结果显示" |
+**严谨 ≠ 僵化，只标记不替作者决定。**
+- **正确性（D2/D3）= fail 必改**，客观无争议（标点规范、语法语病）
+- **风格（D1/D4/D5/D6）= warn 建议**，带豁免语境，避免把文字改得千篇一律
+- 工具只报问题 + 给建议，最终取舍在作者——保活人感
 
-### L2 风格一致性（warn）
-| 检测 | 内容 |
-|------|------|
-| 句式指纹 | 不是X而是Y / 从X到Y / 不仅...更是 / 首先其次最后 / 值得注意 |
-| 死板动词 | 进行 / 实现 / 达到 / 提升...（主张用有画面感的动词） |
-| 空泛工具名 | AI工具 / 某个模型 / 相关技术（应说具体名字） |
-| 假想例子 | "比如有一次" / "假设你..."（编造场景） |
-| markdown 小标题 | 用口语转场句分段，禁小标题 |
-| 句长均匀 | 连续 3 句字数差 <5（匀速句长是 AI 味） |
-| 超长段落 | >500 字的段落（缺呼吸感） |
-| 连接词密度 | 然而 / 此外 / 同时 / 因此... |
-| 括号补充 | 括号夹注过多（内容应揉入正文） |
+## 六维检测
 
-### L3 内容质量（warn）
-| 检测 | 内容 |
-|------|------|
-| 金句收束密度 | 每段都用短句收金句，过度仪式化 |
-
-### L4 活人感 / 风格指纹（warn + info）
-| 检测 | 内容 |
-|------|------|
-| 结果先行 | 开篇 100 字内应甩出数字/结论，不线性铺陈 |
-| 汉字数字 | 用"一万七千多行""八成三"，避免 159,000 书面格式 |
-| 结尾短句收束 | 结尾用一句能立住的话，不总结不升华 |
-| 自问自答 | 长文关键数据处用自问自答制造对话节奏 |
-
-## 评分
-
-- 每层独立 `passed`（该层无 fail 即通过）
-- 严重级：`fail`（必改）/ `warn`（建议）/ `info`（提示）
-- 每项带 `suggestion`（修复建议）+ `details`（命中上下文片段）
+| # | 维度 | 级别 | 检测内容 |
+|---|------|------|----------|
+| **D1** | 错字/错词 | warn | 常见错别字对（寒喧/幅射/决窍…）、异形词规范（《第一批异形词整理表》缘份→缘分/澈底→彻底…）、中英混写 |
+| **D2** | 标点规范 | **fail** | 中英标点混用、半角标点、英文引号（GB/T 15834） |
+| **D3** | 语法语病 | **fail** | 成分残缺（通过…使）、搭配不当（改善…水平）、句式杂糅（因为…原因）、前后矛盾（大约…左右） |
+| **D4** | 数字规范 | warn | 日期格式、范围连接号、中英数字混排（GB/T 15835） |
+| **D5** | 文风/去AI味 | warn+fail | 破折号、禁用词（赋能/闭环/底层逻辑…）、元语言、教科书开头、句式指纹、死板动词、空泛工具名 |
+| **D6** | 活人感/可读 | warn | 句长均匀（无节奏）、超长段落、连接词密度、结果先行 |
 
 ## 用法
 
 ```bash
-python ai_taste_scanner.py 你的文档.md
+python zh_writing_checker.py 你的文档.md          # 人类可读报告
+python zh_writing_checker.py 你的文档.md --json   # 结构化 JSON（适合 CI）
 ```
 
-输出 JSON 报告：四层问题清单 + 分层评分 + 句长统计。
+示例输出（人类可读）：
+
+```
+文件: test_sample.md  v3.0
+问题 29 项 | fail 12 | warn 14 | 通过 False
+  ❌ D3 通过=False 问题=4 (fail 4/warn 0)
+  ❌ D5 通过=False 问题=19 (fail 6/warn 10)
+  ❌ [D3] 搭配不当·改善…水平 ×1
+  ❌ [D5] 禁用词:赋能 ×1
+  ⚠️ [D1] 异形词: 缘份（规范:缘分） ×1
+```
+
+JSON 报告结构：
 
 ```json
 {
-  "file": "doc.md",
-  "version": "2.0",
-  "total_issues": 11,
-  "fail_count": 9,
-  "warn_count": 2,
-  "passed": false,
-  "layers": {"L1": {"passed": false, "issue_count": 9}, ...},
-  "issues": [
-    {"layer": "L1", "type": "禁用词: 赋能", "count": 1, "severity": "fail", "suggestion": "...", "details": [...]}
-  ],
-  "stats": {"total_chars": 312, "total_sentences": 8, ...}
+  "file": "doc.md", "version": "3.0",
+  "total_issues": 29, "fail_count": 12, "passed": false,
+  "dimension_counts": {"D1": 2, "D2": 2, "D3": 4, "D4": 1, "D5": 19, "D6": 1},
+  "layers": {"D1": {"passed": true, "issue_count": 2, ...}, ...},
+  "issues": [{"layer": "D3", "type": "搭配不当·改善…水平", "severity": "fail", "suggestion": "...", "details": [...]}],
+  "stats": {"total_chars": 1227, "total_sentences": 14}
 }
 ```
 
 ## 自定义规则
 
-词表集中在文件头部 `DISABLED_WORDS` / `META_LANGUAGE` / `TEXTBOOK_OPENERS` / `DEAD_VERBS` / `CONNECTIVES` 等常量，按需增删，适合接入团队写作规范。
+词表集中在文件头部常量（`COMMON_TYPO_PAIRS` / `VARIANT_WORDS` / `DISABLED_WORDS` / `FAULTY_PATTERNS` / `DEAD_VERBS` 等），按需增删，适合接入团队写作规范。
 
-## 依赖
+## 与旧版关系
 
-纯 Python 标准库（`re`/`json`/`sys`/`pathlib`），零第三方依赖。
+v3.0 从 `ai-taste-scanner`（AI 味扫描器）升级而来：**AI 味检测保留为 D5 维度**，新增 D1-D4（错字/标点/语病/数字）与 D6（活人感），从"检测 AI 味"扩展为"中文写作质量全维度把关"。
 
 ## 来源声明 (Acknowledgements)
 
-本工具的 **L1-L4 四层自检体系** 与 **高频踩雷词表** 派生自以下开源作品：
-
+**D5 文风/去AI味维度**的检测框架与高频踩雷词表派生自以下开源作品：
 - **卡兹克 khazix-writer skill**（数字生命卡兹克 / Khazix）
 - 仓库：https://github.com/KKKKhazix/khazix-skills
 - 许可：MIT License（Copyright (c) 2026 数字生命卡兹克）
 
-扫描/分析代码本身为原创，但四层框架与踩雷词表为 khazix-writer 的移植。完整声明见 [NOTICE](NOTICE)，MIT 许可全文见 [LICENSE.khazix](LICENSE.khazix)。
+D1-D4、D6 的检测规则与扫描代码为原创。完整声明见 [NOTICE](NOTICE)，MIT 许可全文见 [LICENSE.khazix](LICENSE.khazix)。
 
 ## License
 
-[Apache License 2.0](LICENSE)（原创部分）· [MIT License](LICENSE.khazix)（khazix 派生部分，详见 NOTICE）
+[Apache License 2.0](LICENSE)（原创部分）· [MIT License](LICENSE.khazix)（khazix 派生部分，仅 D5 维度，详见 NOTICE）

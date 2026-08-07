@@ -1,4 +1,4 @@
-AI Taste Scanner — Third-Party Notices / 第三方声明
+zh-writing-checker — Third-Party Notices / 第三方声明
 
 This software incorporates portions derived from the following third-party
 open-source work:
@@ -10,13 +10,16 @@ open-source work:
 
 Derivation statement (本工具对下列内容的来源声明):
 
-The four-layer self-check architecture (L1 硬性规则 / L2 风格一致性 /
-L3 内容质量 / L4 活人感) and the 高频踩雷词 (high-frequency AI-trap word)
-list implemented in ai_taste_scanner.py are derived from the khazix-writer
-skill listed above. The scanning/analysis code itself is original, but the
-four-layer framework and the trap-word list are ports of khazix-writer.
-本工具的 L1-L4 四层自检体系与高频踩雷词表派生自上述 khazix-writer skill；
-扫描/分析代码本身为原创，但四层框架与踩雷词表为 khazix-writer 的移植。
+The D5 文风/去AI味 (style / de-AI-flavor) detection dimension — including the
+four-layer self-check architecture (L1 硬性规则 / L2 风格一致性 / L3 内容质量 /
+L4 活人感) and the 高频踩雷词 (high-frequency AI-trap word) list implemented in
+zh_writing_checker.py — is derived from the khazix-writer skill listed above.
+The scanning/analysis code and the D1-D4/D6 detection rules (错字/标点/语病/数字/
+活人感) are original. Only the D5 dimension (AI-flavor detection) is a port of
+khazix-writer.
+本工具的 D5 文风/去AI味维度（含 L1-L4 四层自检体系与高频踩雷词表）派生自上述
+khazix-writer skill；扫描/分析代码及 D1-D4、D6 检测规则（错字/标点/语病/数字/
+活人感）为原创。仅 D5 维度（AI 味检测）为 khazix-writer 的移植。
 
 The MIT License text of the above source, which must be preserved in
 substantial portions, is reproduced below:
