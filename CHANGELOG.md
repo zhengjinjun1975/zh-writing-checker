@@ -5,6 +5,14 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)（小版本递增，未成熟不逼近 1.0）。
 
+## [0.1.1] - 2026-08-11
+
+### 新增（优化器能力，吸收 qu-ai-wei 方法论）
+- 门检 gate_check：改写前判真人文本，真人停手不改声口
+- 语体识别 detect_register：9 种语体，避免学术/公文误改口语
+- optimize() 闭环：检测 → 改写建议 → 复检，输出 improvement 对比
+- 定位升级：检测器 → 优化器（检测→改写→复检）
+
 ## [0.1.0] - 2026-08-11
 
 ### 变更

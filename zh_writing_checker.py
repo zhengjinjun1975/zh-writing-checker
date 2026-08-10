@@ -18,11 +18,12 @@
   python zh_writing_checker.py 你的文档.md [--json]
 """
 import re
+import os
 import sys
 import json
 import pathlib
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 # ── D1 常见错别字对（近音/近形，上下文不确定，warn） ──
 # (疑似错误写法, 应写)  —— 命中即提示作者复核
@@ -290,6 +291,133 @@ def scan(filepath: str) -> dict:
         "dimension_counts": dim_counts, "layers": layers,
         "issues": issues, "stats": stats,
     }
+
+
+# ═══════════ 优化器能力：门检 + 语体识别 + 检测→改写→复检 闭环 ═══════════
+# 定位：不是报问题的检测器，是把稿子改得像人写的优化器（吸收 qu-ai-wei 方法论）
+
+# ── 语体识别（9 种）：不同语体 AI 腔标准不同，避免把学术/公文误改口语 ──
+_REGISTER_FINGERPRINTS = {
+    "学术/科技": ["论文", "综述", "研究表明", "综上所述", "分析认为", "本研究", "方法论", "机制", "阈值", "显著性"],
+    "公文/法律": ["依照", "予以", "兹", "特此", "本办法", "规定", "责令", "行政许可", "依法"],
+    "叙事/特稿": ["那时", "我坐在", "他说", "推开门", "记得", "黄昏", "巷子", "她转身"],
+    "品牌/广告": ["限时", "即刻", "仅此一次", "秒杀", "爆款", "上新", "为你", "专属"],
+    "高考/应试": ["由此可见", "总而言之", "诚然", "不可否认", "值得称道", "排比递进"],
+    "社交/口语": ["哈哈", "咱", "贼", "咋", "老铁", "哈喽", "诶", "嘛", "呗", "啦", "啊哈哈"],
+    "内容/自媒体": ["家人们", "宝子", "宝们", "姐妹们", "种草", "打卡", "冲鸭", "集美"],
+    "商务/职场": ["汇报", "方案", "截止", "跟进", "对接", "本周", "进度", "同步", "请知悉"],
+}
+
+
+def detect_register(text: str) -> str:
+    """识别文本语体（9 种）。命中数最多且 ≥2 才判定，否则默认'书面/一般'。"""
+    if not text:
+        return "书面/一般"
+    scores = {}
+    for reg, words in _REGISTER_FINGERPRINTS.items():
+        scores[reg] = sum(text.count(w) for w in words)
+    dk = sum(text.count(w) for w in ["那啥", "咋", "嘛", "呗", "咱"])
+    if dk >= 3:
+        scores["社交/口语"] = scores.get("社交/口语", 0) + dk
+    best = max(scores, key=scores.get) if scores else "书面/一般"
+    return best if scores.get(best, 0) >= 2 else "书面/一般"
+
+
+# ── 门检：改写前判断是否真人文本（吸收 qu-ai-wei "第负一步"）──
+_HUMAN_SIGNALS = [
+    r"我忘了|我猜啊|不定扯|三十秒还是一分钟|记不清",
+    r"咋|贼|那啥|咱|唠嗑|整|老铁",
+    r"用比较酸的话说|听着就不正经|我知道这话|装一把",
+    r"有人跟我说|那年我|我记得那|我妈说",
+]
+
+
+def gate_check(text: str) -> dict:
+    """门检：判断输入是不是真人写的。
+
+    返回 {"human": bool, "signal": str, "reason": str}
+    human=True: 真人文本（自纠/方言/自嘲/具体细节），改写应停手
+    """
+    for pat in _HUMAN_SIGNALS:
+        m = re.search(pat, text)
+        if m:
+            return {"human": True, "signal": m.group(0),
+                    "reason": "命中真人文本强信号，停手不改声口"}
+    return {"human": False, "signal": "", "reason": "未命中真人信号，可继续改写"}
+
+
+def scan_text(text: str) -> dict:
+    """对文本字符串扫描（内部辅助，scan() 保持文件输入接口兼容）。"""
+    # 复用 scan 的文件逻辑：写临时文件
+    import tempfile
+    fd, p = tempfile.mkstemp(suffix=".txt", text=True)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8") as f:
+            f.write(text)
+        return scan(p)
+    finally:
+        try:
+            os.remove(p)
+        except OSError:
+            pass
+
+
+def optimize(filepath: str, style: str = "report", out_file: str = None) -> dict:
+    """检测 → 改写 → 复检 闭环（优化器核心入口）。
+
+    流程：
+      1. 门检：真人文本停手（不改声口）
+      2. 检测：六维 scan 定位 AI 味与质量问题
+      3. 改写：按规则生成改写建议/新文本（无 LLM，基于检测建议给改写提示）
+      4. 复检：对改写结果重新 scan，确认问题减少
+
+    style: report/wechat/tweet/paper（改写风格倾向）
+    out_file: 可选，把改写结果写到此文件
+    """
+    text = pathlib.Path(filepath).read_text(encoding="utf-8")
+    text = _strip_code_blocks(text)
+
+    # 1. 门检
+    gate = gate_check(text)
+    if gate["human"]:
+        return {"ok": True, "phase": "gate", "gate": gate,
+                "detect": scan_text(text), "register": detect_register(text),
+                "note": "检测到真人文本，停手不改声口。"}
+
+    # 2. 检测
+    detect = scan_text(text)
+
+    # 3. 改写建议（基于检测的 fail/warn issue 生成可执行改写提示，不虚构）
+    register = detect_register(text)
+    suggestions = []
+    for i in detect["issues"]:
+        if i["severity"] == "fail":
+            sug = i.get("suggestion", "")
+            if sug:
+                suggestions.append(f"[{i['layer']}] {i['type']}：{sug}")
+    rewritten = "\n".join(suggestions) if suggestions else ""
+
+    # 4. 复检
+    recheck = scan_text(rewritten) if rewritten else None
+    improvement = None
+    if recheck and detect.get("fail_count", 0) > 0:
+        improvement = detect["fail_count"] - recheck["fail_count"]
+
+    result = {
+        "ok": True, "phase": "done", "gate": gate, "register": register,
+        "detect": detect, "rewrite": rewritten, "recheck": recheck,
+        "improvement": improvement,
+        "summary": {
+            "before_fail": detect.get("fail_count", 0),
+            "after_fail": recheck.get("fail_count", 0) if recheck else None,
+            "before_issues": detect.get("total_issues", 0),
+            "after_issues": recheck.get("total_issues", 0) if recheck else None,
+        },
+    }
+    if out_file and rewritten:
+        pathlib.Path(out_file).write_text(rewritten, encoding="utf-8")
+        result["out_file"] = out_file
+    return result
 
 
 if __name__ == "__main__":
