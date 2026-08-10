@@ -21,7 +21,7 @@ def _scan(text, suffix=".md"):
 
 
 def test_version():
-    assert zwc.VERSION == "3.0"
+    assert zwc.VERSION == "0.1.0"
 
 
 def test_six_dimensions_present():

@@ -22,7 +22,7 @@ import sys
 import json
 import pathlib
 
-VERSION = "3.0"
+VERSION = "0.1.0"
 
 # ── D1 常见错别字对（近音/近形，上下文不确定，warn） ──
 # (疑似错误写法, 应写)  —— 命中即提示作者复核

@@ -32,7 +32,7 @@ python zh_writing_checker.py 你的文档.md --json   # 结构化 JSON（适合 
 示例输出（人类可读）：
 
 ```
-文件: test_sample.md  v3.0
+文件: test_sample.md  v0.1.0
 问题 29 项 | fail 12 | warn 14 | 通过 False
   ❌ D3 通过=False 问题=4 (fail 4/warn 0)
   ❌ D5 通过=False 问题=19 (fail 6/warn 10)
@@ -45,7 +45,7 @@ JSON 报告结构：
 
 ```json
 {
-  "file": "doc.md", "version": "3.0",
+  "file": "doc.md", "version": "0.1.0",
   "total_issues": 29, "fail_count": 12, "passed": false,
   "dimension_counts": {"D1": 2, "D2": 2, "D3": 4, "D4": 1, "D5": 19, "D6": 1},
   "layers": {"D1": {"passed": true, "issue_count": 2, ...}, ...},
@@ -60,7 +60,9 @@ JSON 报告结构：
 
 ## 与旧版关系
 
-v3.0 从 `ai-taste-scanner`（AI 味扫描器）升级而来：**AI 味检测保留为 D5 维度**，新增 D1-D4（错字/标点/语病/数字）与 D6（活人感），从"检测 AI 味"扩展为"中文写作质量全维度把关"。
+本仓库由 `ai-taste-scanner`（AI 味扫描器）更名重构而来：**AI 味检测保留为 D5 维度**，新增 D1-D4（错字/标点/语病/数字）与 D6（活人感），从"检测 AI 味"扩展为"中文写作质量全维度把关"。
+
+> **版本说明**：当前为 v0.1.0（更名重构后的首个发布），项目未成熟、生态未建，按小版本递增演进，不虚标大版本。
 
 ## 来源声明 (Acknowledgements)
 
