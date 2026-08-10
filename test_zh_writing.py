@@ -12,12 +12,8 @@ GOOD = "今天天气很好。我们去公园散步。湖边的柳树绿了，孩
 
 
 def _scan(text, suffix=".md"):
-    p = pathlib.Path(__file__).parent / f"_tmp{suffix}"
-    p.write_text(text, encoding="utf-8")
-    try:
-        return zwc.scan(str(p))
-    finally:
-        p.unlink(missing_ok=True)
+    """对文本字符串直接扫描（复用库内 scan_text，避免重复临时文件逻辑）。"""
+    return zwc.scan_text(text)
 
 
 def test_version():
