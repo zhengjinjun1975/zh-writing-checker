@@ -1,29 +1,44 @@
 zh-writing-checker — Third-Party Notices / 第三方声明
 
 This software incorporates portions derived from the following third-party
-open-source work:
+open-source works:
 
     khazix-writer skill
     Author:  数字生命卡兹克 (Khazix)
     Repo:    https://github.com/KKKKhazix/khazix-skills
     License: MIT License
 
+    qu-ai-wei
+    Author:  @LifelongLazyLearner
+    Repo:    https://github.com/LifelongLazyLearner/qu-ai-wei
+    License: MIT License
+
 Derivation statement (本工具对下列内容的来源声明):
 
-The D5 文风/去AI味 (style / de-AI-flavor) detection dimension — including the
-four-layer self-check architecture (L1 硬性规则 / L2 风格一致性 / L3 内容质量 /
-L4 活人感) and the 高频踩雷词 (high-frequency AI-trap word) list implemented in
-zh_writing_checker.py — is derived from the khazix-writer skill listed above.
-The scanning/analysis code and the D1-D4/D6 detection rules (错字/标点/语病/数字/
-活人感) are original. Only the D5 dimension (AI-flavor detection) is a port of
-khazix-writer.
-本工具的 D5 文风/去AI味维度（含 L1-L4 四层自检体系与高频踩雷词表）派生自上述
-khazix-writer skill；扫描/分析代码及 D1-D4、D6 检测规则（错字/标点/语病/数字/
-活人感）为原创。仅 D5 维度（AI 味检测）为 khazix-writer 的移植。
+1. The D5 文风/去AI味 (style / de-AI-flavor) detection dimension — including the
+   高频踩雷词 (high-frequency AI-trap word) list implemented in
+   zh_writing_checker.py — is derived from the khazix-writer skill listed above.
+   The scanning/analysis code and the D1-D4/D6 detection rules (错字/标点/语病/数字/
+   活人感) are original. Only the D5 dimension (AI-flavor detection) is a port of
+   khazix-writer.
 
-The MIT License text of the above source, which must be preserved in
-substantial portions, is reproduced below:
-(上述来源的 MIT 许可文本，须在实质性部分保留，全文如下)
+2. The human_gate (真人停手门检 / human-voice gate) and register_of (语体识别 /
+   register detection) mechanisms, and the 人味门检→三线检测→复检
+   (detect→rewrite→recheck) workflow, are conceptually derived from the qu-ai-wei
+   skill listed above (its "真人停手门检" and "语体激活矩阵" methods). The concrete
+   rule lists and scanning code are original; only the method framework is adopted.
+
+1. 本工具的 D5 文风/去AI味维度（含高频踩雷词表）派生自上述 khazix-writer skill；
+   扫描/分析代码及 D1-D4、D6 检测规则（错字/标点/语病/数字/活人感）为原创。
+   仅 D5 维度（AI 味检测）为 khazix-writer 的移植。
+
+2. 本工具的 human_gate（人味门检）与 register_of（语体识别）机制，以及
+   人味门检→三线检测→复检流程，在方法框架上借鉴自上述 qu-ai-wei skill（其"真人停手
+   门检"与"语体激活矩阵"方法）；具体规则表与扫描代码为原创，仅采用其方法框架。
+
+The MIT License texts of the above sources, which must be preserved in
+substantial portions, are reproduced in LICENSE.khazix and LICENSE.quaiwei:
+(上述来源的 MIT 许可文本，须在实质性部分保留，全文见 LICENSE.khazix 与 LICENSE.quaiwei)
 
 --------------------------------------------------------------------------
 

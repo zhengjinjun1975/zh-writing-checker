@@ -21,7 +21,7 @@ def _scan(text, suffix=".md"):
 
 
 def test_version():
-    assert zwc.VERSION == "0.1.1"
+    assert zwc.VERSION == "0.1.2"
 
 
 def test_six_dimensions_present():
@@ -62,3 +62,26 @@ def test_scan_bad_sample_finds_issues():
     r = zwc.scan(str(BAD))
     assert r["total_issues"] >= 5
     assert r["fail_count"] >= 1
+
+
+def test_three_lines_present():
+    """三线汇总字段存在且维度归属正确。"""
+    r = _scan("赋能 缘份。")
+    assert set(r["lines"].keys()) == {"hard", "style", "human"}
+    assert r["lines"]["hard"]["dims"] == ["D1", "D2", "D3", "D4"]
+    assert r["lines"]["style"]["dims"] == ["D5"]
+    assert r["lines"]["human"]["dims"] == ["D6"]
+
+
+def test_lines_counts_match_dimensions():
+    """三线 issue_count = 所属维度 issue_count 之和。"""
+    r = _scan(str(BAD))
+    for line in ["hard", "style", "human"]:
+        total = sum(r["layers"][d]["issue_count"] for d in r["lines"][line]["dims"])
+        assert r["lines"][line]["issue_count"] == total
+
+
+def test_json_compat_layer_field():
+    """JSON 兼容：每个 issue 仍带 layer: D1-D6 字段。"""
+    r = _scan(str(BAD))
+    assert all(i["layer"] in {"D1", "D2", "D3", "D4", "D5", "D6"} for i in r["issues"])

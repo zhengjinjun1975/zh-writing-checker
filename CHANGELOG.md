@@ -5,13 +5,21 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 版本遵循 [语义化版本](https://semver.org/lang/zh-CN/)（小版本递增，未成熟不逼近 1.0）。
 
-## [0.1.1] - 2026-08-11
+## [0.1.2] - 2026-08-11
 
 ### 新增（优化器能力，吸收 qu-ai-wei 方法论）
-- 门检 gate_check：改写前判真人文本，真人停手不改声口
-- 语体识别 detect_register：9 种语体，避免学术/公文误改口语
-- optimize() 闭环：检测 → 改写建议 → 复检，输出 improvement 对比
+- 人味门检 human_gate：改写前判真人文本，真人停手不改声口
+- 语体识别 register_of：8 种语体，避免学术/公文误改口语
+- refine() 闭环：人味门检 → 三线检测 → 复检，输出 improvement 对比
 - 定位升级：检测器 → 优化器（检测→改写→复检）
+
+### 变更（方法论语体系重构，能力不变）
+- 语言体系：D1-D6 编号 → 三线（硬规则/文风/人味）叙述，保留 `layer: D1-D6` 兼容
+- 术语重构：门检→人味门检(human_gate)、语体识别→register_of、optimize→refine、六维→三线检测
+- JSON 新增 `lines` 三线汇总字段（纯增量，不破坏既有字段与 CI 解析）
+- 代码极简重构：删死代码 `_scan_dimension`、抽统一收集 `_collect`、修语体数注释 9→8、CONNECTIVES 去重
+- 圈复杂度重构（CodeAgent 审查发现）：`scan()` 拆为 6 个维度扫描函数 + `_summarize` 汇总，圈复杂度 39→0；D5 抽 `_scan_wordlist` 通用词表扫描
+- 合规补声明：NOTICE + LICENSE.quaiwei + README 致谢，补 qu-ai-wei 派生来源（此前遗漏）
 
 ## [0.1.0] - 2026-08-11
 
