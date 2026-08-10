@@ -61,7 +61,7 @@ def test_scan_bad_sample_finds_issues():
 
 
 def test_three_lines_present():
-    """三线汇总字段存在且维度归属正确。"""
+    """兼容：旧三线汇总字段存在且维度归属正确（向后兼容）。"""
     r = _scan("赋能 缘份。")
     assert set(r["lines"].keys()) == {"hard", "style", "human"}
     assert r["lines"]["hard"]["dims"] == ["D1", "D2", "D3", "D4"]
@@ -70,7 +70,7 @@ def test_three_lines_present():
 
 
 def test_lines_counts_match_dimensions():
-    """三线 issue_count = 所属维度 issue_count 之和。"""
+    """兼容：旧三线 issue_count = 所属维度 issue_count 之和。"""
     r = _scan(str(BAD))
     for line in ["hard", "style", "human"]:
         total = sum(r["layers"][d]["issue_count"] for d in r["lines"][line]["dims"])
@@ -81,3 +81,29 @@ def test_json_compat_layer_field():
     """JSON 兼容：每个 issue 仍带 layer: D1-D6 字段。"""
     r = _scan(str(BAD))
     assert all(i["layer"] in {"D1", "D2", "D3", "D4", "D5", "D6"} for i in r["issues"])
+
+
+def test_two_tiers_present():
+    """两层（L1 语言层 / L2 表达层）汇总字段存在且维度归属正确。"""
+    r = _scan("赋能 缘份。")
+    assert set(r["tiers"].keys()) == {"L1", "L2"}
+    assert r["tiers"]["L1"]["dims"] == ["D1", "D2", "D3", "D4"]
+    assert r["tiers"]["L2"]["dims"] == ["D5", "D6"]
+
+
+def test_tier_counts_match_dimensions():
+    """两层 issue_count = 所属维度 issue_count 之和。"""
+    r = _scan(str(BAD))
+    for tier in ["L1", "L2"]:
+        total = sum(r["layers"][d]["issue_count"] for d in r["tiers"][tier]["dims"])
+        assert r["tiers"][tier]["issue_count"] == total
+
+
+def test_tier_decision_nature():
+    """两层按决策性质分类：L1 语言层客观必改、L2 表达层主观建议。"""
+    r = zwc.scan(str(BAD))  # BAD 是文件路径，用 scan 读文件
+    # L1 的 fail 属客观错误（标点/语法）；L2 的 fail 属 AI 腔（破折号/禁用词）
+    l1_fail_types = {i["type"] for i in r["issues"] if i["layer"] in r["tiers"]["L1"]["dims"] and i["severity"] == "fail"}
+    l2_fail_types = {i["type"] for i in r["issues"] if i["layer"] in r["tiers"]["L2"]["dims"] and i["severity"] == "fail"}
+    assert any("标点" in t or "搭配" in t or "杂糅" in t or "矛盾" in t for t in l1_fail_types)
+    assert any("禁用词" in t or "破折号" in t for t in l2_fail_types)

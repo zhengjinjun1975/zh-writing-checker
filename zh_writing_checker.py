@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
-"""zh_writing_checker.py — 中文写作优化器（三线检测）
+"""zh_writing_checker.py — 中文写作优化器（两层四维）
 
-工作流：人味门检 → 三线检测 → 复检（Gate → Detect → Recheck）。
+工作流：人味门检 → 两层检测 → 复检（Gate → Detect → Recheck）。
 
-三线：
-  · 硬规则线（must-fix, fail）：字词 D1 / 标点 D2 / 语法 D3 / 数字 D4 —— 客观对错
-  · 文风线  （should-fix, warn+fail）：去AI味 D5 —— 风格判断，留余地
-  · 人味线  （should-fix, warn）：活人感/可读 D6 —— 最主观
+两层（按决策性质分类）：
+  · L1 语言层（must-fix, fail）：写对没有 —— 客观对错，无争议
+      L1a 书写（字词 D1 / 标点 D2）· L1b 语法（语法 D3 / 数字 D4）
+  · L2 表达层（should-fix, warn）：像不像人 —— 主观感受，AI 腔
+      L2a 文风（去AI味 D5）· L2b 人味（可读 D6）
 
-原则：正确性必改，风格给建议，改写不虚构，真人文本停手。
+原则：语言层必改（客观），表达层建议（主观），改写不虚构，真人文本停手。
 用法:
   python zh_writing_checker.py 你的文档.md [--json]
 """
@@ -20,7 +21,7 @@ import pathlib
 
 VERSION = "0.1.2"
 
-# ── 硬规则线 D1 字词 ──
+# ── L1 语言层·L1a 书写 D1 字词 ──
 COMMON_TYPO_PAIRS = [
     ("必需", "必须"), ("做为", "作为"),
     ("帐本", "账本"), ("座落", "坐落"), ("寒喧", "寒暄"),
@@ -40,7 +41,7 @@ VARIANT_WORDS = [
     ("跌荡", "跌宕"), ("故技重演", "故伎重演"),
 ]
 
-# ── 硬规则线 D2 标点（GB/T 15834）──
+# ── L1 语言层·L1a 书写 D2 标点（GB/T 15834）──
 EN_PUNCT_IN_CN = {
     ",": "，", ".": "。", "?": "？", "!": "！",
     ";": "；", ":": "：", '"': "“”",
@@ -48,7 +49,7 @@ EN_PUNCT_IN_CN = {
 HALF_PUNCT = re.compile(r"[\u4e00-\u9fff][,.;:!?](?=[\u4e00-\u9fff])")
 MIXED_PUNCT = re.compile(r"[\u4e00-\u9fff][,.;:!?()]")
 
-# ── 硬规则线 D3 语法语病 ──
+# ── L1 语言层·L1b 语法 D3 语法语病 ──
 FAULTY_PATTERNS = [
     ("成分残缺·通过…使", r"通过[^。，；]{2,30}(使|让|令)", "“通过…使”双介词，主语残缺，删其一"),
     ("成分残缺·缺主语", r"^(经过|随着|由于)[^。]{5,40}(终于|才|便)", "句首介词短语后缺主语"),
@@ -63,12 +64,12 @@ FAULTY_PATTERNS = [
     ("成分残缺·对…进行", r"对[^。]{2,30}进行(了)?$", "“对…进行”缺宾语或冗余"),
 ]
 
-# ── 硬规则线 D4 数字（GB/T 15835）──
+# ── L1 语言层·L1b 语法 D4 数字（GB/T 15835）──
 DATE_FMT = re.compile(r"\d{4}[/-]\d{1,2}[/-]\d{1,2}")
 RANGE_TILDE = re.compile(r"\d+~\d+")
 CN_CN_NUM = re.compile(r"[\u4e00-\u9fff][0-9]+|(?<![0-9])[0-9]+[\u4e00-\u9fff]")
 
-# ── 文风线 D5 去AI味 ──
+# ── L2 表达层·L2a 文风 D5 去AI味 ──
 DISABLED_WORDS = [
     "底层逻辑", "赋能", "闭环", "长期主义", "关键抓手", "价值沉淀", "认知升级",
     "说白了", "本质上", "综上所述", "值得注意的是", "不难发现",
@@ -91,7 +92,7 @@ STYLE_PATTERNS = [
 DEAD_VERBS = ["进行", "实现", "达到", "提升", "降低", "增加", "减少", "拥有", "属于", "涉及", "相关的", "所谓的"]
 DASH_PATTERN = re.compile(r"—{1,2}|–{1,2}|\u2014|\u2013")
 
-# ── 人味线 D6 活人感/可读 ──
+# ── L2 表达层·L2b 人味 D6 活人感/可读 ──
 CONNECTIVES = ["然而", "此外", "同时", "因此", "总之", "综上", "进而", "从而", "并且", "而且", "再者", "换言之"]
 LONG_PARAGRAPH = 400
 FLAT_SENTENCE_DELTA = 5
@@ -127,15 +128,19 @@ def _collect(hits, layer, type_, count, severity, suggestion, details):
 
 
 # ── 各维度扫描 ──
-# 维度归属线（三线）：硬规则 D1-D4 / 文风 D5 / 人味 D6
+# 维度归属（两层四维）：L1 语言层 D1-D4 / L2 表达层 D5-D6
+# 旧三线映射保留（向后兼容）：硬规则 D1-D4 / 文风 D5 / 人味 D6
+_TIER_OF_DIM = {"D1": "L1", "D2": "L1", "D3": "L1", "D4": "L1",
+                "D5": "L2", "D6": "L2"}
 _LINE_OF_DIM = {"D1": "hard", "D2": "hard", "D3": "hard", "D4": "hard",
                 "D5": "style", "D6": "human"}
 _DIMS = ["D1", "D2", "D3", "D4", "D5", "D6"]
+_TIERS = ["L1", "L2"]
 _LINES = ["hard", "style", "human"]
 
 
 def _scan_d1(text, issues):
-    """硬规则线·字词：错字 / 异形词 / 中英混写。"""
+    """L1 语言层·L1a 书写：错字 / 异形词 / 中英混写。"""
     for wrong, right in VARIANT_WORDS:
         if wrong != right and wrong in text:
             _collect(issues, "D1", f"异形词: {wrong}（规范:{right}）", text.count(wrong), "warn",
@@ -151,7 +156,7 @@ def _scan_d1(text, issues):
 
 
 def _scan_d2(text, issues):
-    """硬规则线·标点：中英混用 / 半角 / 英文引号（GB/T 15834）。"""
+    """L1 语言层·L1a 书写：中英混用 / 半角 / 英文引号（GB/T 15834）。"""
     for m in HALF_PUNCT.finditer(text):
         c = text[m.start() + 1]
         _collect(issues, "D2", f"半角标点{c}(应全角)", 1, "fail",
@@ -166,14 +171,14 @@ def _scan_d2(text, issues):
 
 
 def _scan_d3(text, issues):
-    """硬规则线·语法：成分残缺 / 搭配不当 / 句式杂糅 / 前后矛盾。"""
+    """L1 语言层·L1b 语法：成分残缺 / 搭配不当 / 句式杂糅 / 前后矛盾。"""
     for name, pat, sug in FAULTY_PATTERNS:
         for m in re.finditer(pat, text):
             _collect(issues, "D3", name, 1, "fail", sug, [m.group(0)[:40]])
 
 
 def _scan_d4(text, issues):
-    """硬规则线·数字：日期 / 范围连接号 / 中英数字混排（GB/T 15835）。"""
+    """L1 语言层·L1b 语法：日期 / 范围连接号 / 中英数字混排（GB/T 15835）。"""
     for m in DATE_FMT.finditer(text):
         _collect(issues, "D4", f"日期格式:{m.group(0)}", 1, "warn",
                  "日期建议用 YYYY-MM-DD 或中文年月日", [m.group(0)])
@@ -194,7 +199,7 @@ def _scan_wordlist(text, issues, layer, words, severity, suggestion, prefix=""):
 
 
 def _scan_d5(text, issues):
-    """文风线·去AI味：禁用词 / 元语言 / 教科书开头 / 句式指纹 / 死板动词 / 破折号。"""
+    """L2 表达层·L2a 文风：禁用词 / 元语言 / 教科书开头 / 句式指纹 / 死板动词 / 破折号。"""
     _scan_wordlist(text, issues, "D5", DISABLED_WORDS, "fail", "换成具体描述", "禁用词:")
     _scan_wordlist(text, issues, "D5", META_LANGUAGE, "warn", "删掉或改自然转场", "元语言:")
     _scan_wordlist(text, issues, "D5", TEXTBOOK_OPENERS, "warn", "开头直接给结论", "教科书开头:")
@@ -208,7 +213,7 @@ def _scan_d5(text, issues):
 
 
 def _scan_d6(text, issues, stats):
-    """人味线·可读：超长段落 / 句长均匀 / 连接词密度 / 结果先行。"""
+    """L2 表达层·L2b 人味：超长段落 / 句长均匀 / 连接词密度 / 结果先行。"""
     for para in text.split("\n"):
         if len(para) > LONG_PARAGRAPH:
             _collect(issues, "D6", f"超长段落({len(para)}字)", 1, "warn",
@@ -231,7 +236,7 @@ def _scan_d6(text, issues, stats):
 
 
 def _summarize(issues, filepath, stats):
-    """汇总：六维分层 + 三线归并，输出最终报告。"""
+    """汇总：两层（L1 语言层 / L2 表达层）+ 四维归并，输出最终报告。"""
     dim_counts, layers = {}, {}
     for dim in _DIMS:
         dim_issues = [i for i in issues if i["layer"] == dim]
@@ -240,6 +245,13 @@ def _summarize(issues, filepath, stats):
                        "fail_count": sum(1 for i in dim_issues if i["severity"] == "fail"),
                        "warn_count": sum(1 for i in dim_issues if i["severity"] == "warn")}
         dim_counts[dim] = len(dim_issues)
+    # 两层汇总（L1 语言层 / L2 表达层）
+    tiers = {tier: {"dims": [], "issue_count": 0, "fail_count": 0} for tier in _TIERS}
+    for dim, tier in _TIER_OF_DIM.items():
+        tiers[tier]["dims"].append(dim)
+        tiers[tier]["issue_count"] += layers[dim]["issue_count"]
+        tiers[tier]["fail_count"] += layers[dim]["fail_count"]
+    # 旧三线汇总（向后兼容）
     lines = {line: {"dims": [], "issue_count": 0, "fail_count": 0} for line in _LINES}
     for dim, line in _LINE_OF_DIM.items():
         lines[line]["dims"].append(dim)
@@ -251,19 +263,20 @@ def _summarize(issues, filepath, stats):
         "total_issues": len(issues), "fail_count": fail_total,
         "warn_count": sum(1 for i in issues if i["severity"] == "warn"),
         "passed": fail_total == 0,
-        "dimension_counts": dim_counts, "layers": layers, "lines": lines,
+        "dimension_counts": dim_counts, "layers": layers,
+        "tiers": tiers, "lines": lines,
         "issues": issues, "stats": stats,
     }
 
 
 def scan(filepath: str) -> dict:
-    """三线检测：扫描文件，输出三线六维报告。"""
+    """两层四维检测：扫描文件，输出两层四维报告。"""
     raw = pathlib.Path(filepath).read_text(encoding="utf-8")
     text = _strip_code_blocks(raw)
     issues = []
     stats = {"total_chars": len(raw), "total_sentences": len(_split_sentences(text))}
 
-    # 三线六维扫描（每条线各司其职）
+    # 四维六检扫描（L1 语言层 + L2 表达层）
     _scan_d1(text, issues)
     _scan_d2(text, issues)
     _scan_d3(text, issues)
@@ -274,7 +287,7 @@ def scan(filepath: str) -> dict:
     return _summarize(issues, filepath, stats)
 
 
-# ═══════════ 优化器能力：人味门检 + 语体识别 + 三线检测→改写→复检 闭环 ═══════════
+# ═══════════ 优化器能力：人味门检 + 语体识别 + 两层检测→改写→复检 闭环 ═══════════
 # 定位：不是报问题的检测器，是把稿子改得像人写的优化器（吸收 qu-ai-wei 方法论）
 
 # ── 语体识别（8 种）：不同语体 AI 腔标准不同，避免把学术/公文误改口语 ──
@@ -344,11 +357,11 @@ def scan_text(text: str) -> dict:
 
 
 def refine(filepath: str, style: str = "report", out_file: str = None) -> dict:
-    """人味门检 → 三线检测 → 复检 闭环（优化器核心入口）。
+    """人味门检 → 两层检测 → 复检 闭环（优化器核心入口）。
 
     流程：
       1. 人味门检：真人文本停手（不改声口）
-      2. 三线检测：scan 定位 AI 味与质量问题
+      2. 两层检测：scan 定位 AI 味与质量问题
       3. 改写：按规则生成改写建议/新文本（无 LLM，基于检测建议给改写提示）
       4. 复检：对改写结果重新 scan，确认问题减少
 
@@ -365,7 +378,7 @@ def refine(filepath: str, style: str = "report", out_file: str = None) -> dict:
                 "detect": scan_text(text), "register": register_of(text),
                 "note": "检测到真人文本，停手不改声口。"}
 
-    # 2. 三线检测
+    # 2. 两层检测
     detect = scan_text(text)
 
     # 3. 改写建议（基于检测的 fail/warn issue 生成可执行改写提示，不虚构）
@@ -411,10 +424,10 @@ if __name__ == "__main__":
     else:
         print(f"文件: {report['file']}  v{report['version']}")
         print(f"问题 {report['total_issues']} 项 | fail {report['fail_count']} | warn {report['warn_count']} | 通过 {report['passed']}")
-        for line, label in [("hard", "硬规则"), ("style", "文风"), ("human", "人味")]:
-            l = report["lines"][line]
+        for tier, label in [("L1", "语言层"), ("L2", "表达层")]:
+            l = report["tiers"][tier]
             status = "✅" if l["fail_count"] == 0 else "❌"
-            print(f"  {status} {label}线 {','.join(l['dims'])} 问题={l['issue_count']} (fail {l['fail_count']})")
+            print(f"  {status} {label} {','.join(l['dims'])} 问题={l['issue_count']} (fail {l['fail_count']})")
         for dim in ["D1", "D2", "D3", "D4", "D5", "D6"]:
             l = report["layers"][dim]
             status = "✅" if l["passed"] else "❌"
