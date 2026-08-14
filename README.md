@@ -2,6 +2,10 @@
 
 > 轻量、纯 Python、零依赖的中文写作优化器：**先判人味，分两层，改完复检**（Gate → Detect → Rewrite → Recheck）。把"AI 腔、机械文"拉回"像人写的"，同时不误伤真人声口。输出结构化 JSON，供写作者、编辑、审稿人使用，也能当 CI 检查器。
 
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
+
 ## 一句话方法论
 
 **先判人味，分两层，改完复检。**
